@@ -1,4 +1,4 @@
-# Tokenmaster
+# Ethereum based Book My Show Clone
 
 ## Technology Stack & Tools
 
