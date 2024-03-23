@@ -1,68 +1,73 @@
-import { useEffect, useState } from 'react'
-import { ethers } from 'ethers'
+import { useEffect, useState } from "react";
+import { ethers } from "ethers";
 
 // Components
-import Navigation from './components/Navigation'
-import Sort from './components/Sort'
-import Card from './components/Card'
-import SeatChart from './components/SeatChart'
+import Navigation from "./components/Navigation";
+import Sort from "./components/Sort";
+import Card from "./components/Card";
+import SeatChart from "./components/SeatChart";
 
 // ABIs
-import TokenMaster from './abis/TokenMaster.json'
+import TokenMaster from "./abis/TokenMaster.json";
 
 // Config
-import config from './config.json'
+import config from "./config.json";
 
 function App() {
-  const [provider, setProvider] = useState(null)
-  const [account, setAccount] = useState(null)
+  const [account, setAccount] = useState(null);
+  const [provider, setProvider] = useState(null);
+  const [tokenMaster, setTokenMaster] = useState(null);
+  const [occasions, setOccasions] = useState([]);
 
-  const [tokenMaster, setTokenMaster] = useState(null)
-  const [occasions, setOccasions] = useState([])
+  const [occasion, setOccasion] = useState({});
+  const [toggle, setToggle] = useState(false);
 
-  const [occasion, setOccasion] = useState({})
-  const [toggle, setToggle] = useState(false)
+  const loadConnectedAccount = async () => {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    setProvider(provider);
 
-  const loadBlockchainData = async () => {
-    const provider = new ethers.providers.Web3Provider(window.ethereum)
-    setProvider(provider)
+    const network = await provider.getNetwork();
 
-    const network = await provider.getNetwork()
-    const tokenMaster = new ethers.Contract(config[network.chainId].TokenMaster.address, TokenMaster, provider)
-    setTokenMaster(tokenMaster)
+    const address = config[network.chainId].TokenMaster.address;
 
-    const totalOccasions = await tokenMaster.totalOccasions()
-    const occasions = []
+    const tokenMaster = new ethers.Contract(address, TokenMaster, provider);
+    setTokenMaster(tokenMaster);
 
-    for (var i = 1; i <= totalOccasions; i++) {
-      const occasion = await tokenMaster.getOccasion(i)
-      occasions.push(occasion)
+    const totalOccasions = await tokenMaster.totalOccasions();
+
+    const occasions = [];
+
+    for (var i = 1; i <= totalOccasions; ++i) {
+      const occassion = await tokenMaster.getOccasion(i);
+      occasions.push(occassion);
     }
 
-    setOccasions(occasions)
-
-    window.ethereum.on('accountsChanged', async () => {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-      const account = ethers.utils.getAddress(accounts[0])
-      setAccount(account)
-    })
-  }
+    setOccasions(occasions);
+    await window.ethereum.on("accountsChanged", async () => {
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+      const account = ethers.utils.getAddress(accounts[0]);
+      setAccount(account);
+    });
+  };
 
   useEffect(() => {
-    loadBlockchainData()
-  }, [])
+    loadConnectedAccount();
+  }, []);
 
   return (
     <div>
       <header>
+        <h2 className="header__title">
+          <strong>Event</strong> Tickets
+        </h2>
         <Navigation account={account} setAccount={setAccount} />
-
-        <h2 className="header__title"><strong>Event</strong> Tickets</h2>
       </header>
 
       <Sort />
 
-      <div className='cards'>
+      <div className="cards">
         {occasions.map((occasion, index) => (
           <Card
             occasion={occasion}
